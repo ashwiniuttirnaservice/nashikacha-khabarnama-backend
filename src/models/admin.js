@@ -43,7 +43,6 @@ const adminSchema = new mongoose.Schema(
   },
 );
 adminSchema.methods.comparePassword = async function (enteredPassword) {
-  // Direct comparison (Plain Text)
   return enteredPassword === this.password;
 };
 

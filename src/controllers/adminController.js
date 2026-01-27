@@ -9,7 +9,6 @@ const jwt = require("jsonwebtoken");
 const registerAdmin = asyncHandler(async (req, res) => {
   const { fullName, email, password, role } = req.body;
 
-  // 1. Check if email already exists
   const existedAdmin = await Admin.findOne({ email });
   if (existedAdmin) {
     return sendResponse(
@@ -39,18 +38,16 @@ const registerAdmin = asyncHandler(async (req, res) => {
   );
 });
 
-// Inside loginAdmin controller
 const loginAdmin = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
   const admin = await Admin.findOne({ email }).select("+password");
-  // DO NOT add .lean() here
+
   if (!admin) return sendResponse(res, 401, false, "Invalid credentials");
 
   const isMatch = await admin.comparePassword(password);
   if (!isMatch) return sendResponse(res, 401, false, "Invalid credentials");
 
-  // ADDED: role in the payload
   const token = jwt.sign(
     { id: admin._id, role: admin.role },
     process.env.JWT_SECRET,
@@ -60,13 +57,11 @@ const loginAdmin = asyncHandler(async (req, res) => {
   return sendResponse(res, 200, true, "Login successful", { token });
 });
 
-// 2. Get Profile (Protected)
 const getProfile = asyncHandler(async (req, res) => {
   const admin = await Admin.findById(req.user.id);
   return sendResponse(res, 200, true, "Profile fetched", admin);
 });
 
-// 3. Update Admin (Self or SuperAdmin)
 const updateAdmin = asyncHandler(async (req, res) => {
   const { fullName, role, password } = req.body;
   const admin = await Admin.findById(req.params.id);
@@ -75,7 +70,7 @@ const updateAdmin = asyncHandler(async (req, res) => {
 
   if (fullName) admin.fullName = fullName;
   if (role) admin.role = role;
-  if (password) admin.password = password; // Pre-save hook will hash this
+  if (password) admin.password = password;
 
   await admin.save();
   return sendResponse(res, 200, true, "Admin updated successfully");
