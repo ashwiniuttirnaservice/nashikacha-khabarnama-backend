@@ -2,10 +2,7 @@ const Admin = require("../models/admin");
 const asyncHandler = require("../middleware/asyncHandler");
 const { sendResponse } = require("../utils/apiResponse");
 const jwt = require("jsonwebtoken");
-/**
- * @desc    Register a new Admin
- * @route   POST /api/v1/admin/register
- */
+
 const registerAdmin = asyncHandler(async (req, res) => {
   const { fullName, email, password, role } = req.body;
 
