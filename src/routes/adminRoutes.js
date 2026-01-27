@@ -1,19 +1,31 @@
 const { Router } = require("express");
 const {
-    registerAdmin, loginAdmin, getProfile, updateAdmin, deleteAdmin,  getAllAdmins,
+  registerAdmin,
+  loginAdmin,
+  logoutAdmin, // Navin
+  getProfile,
+  updateAdmin,
+  deleteAdmin,
+  updateAdminStatus,
+  getAllAdmins, // Navin
 } = require("../controllers/adminController");
 const authMiddleware = require("../middleware/authMiddleware");
 
 const router = Router();
 
-// Public Routes
+/**
+ * PUBLIC ROUTES
+ */
 router.post("/register", registerAdmin);
 router.post("/login", loginAdmin);
+router.put("/update-status/:id", updateAdminStatus);
+router.get("/all", getAllAdmins);
+router.use(authMiddleware);
 
-// Protected Routes (Require Token)
-router.get("/profile", authMiddleware, getProfile);
-router.get("/all", authMiddleware, getAllAdmins); // NEW: Get all panels/admins
-router.put("/update/:id", authMiddleware, updateAdmin);
-router.delete("/delete/:id", authMiddleware, deleteAdmin);
+router.get("/profile", getProfile);
+router.post("/logout", logoutAdmin);
+
+router.put("/update/:id", updateAdmin);
+router.delete("/delete/:id", deleteAdmin);
 
 module.exports = router;

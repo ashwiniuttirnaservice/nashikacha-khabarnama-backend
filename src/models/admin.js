@@ -30,9 +30,18 @@ const adminSchema = new mongoose.Schema(
       enum: ["Admin", "Panel"],
       default: "Panel",
     },
+    status: {
+      type: String,
+      enum: ["Pending", "Approved", "Rejected", "Suspended"],
+      default: "Pending",
+    },
     profileImage: {
       type: String,
       default: "",
+    },
+    isLoggedIn: {
+      type: Boolean,
+      default: false,
     },
     lastLogin: {
       type: Date,
