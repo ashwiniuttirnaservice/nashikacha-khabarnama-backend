@@ -8,7 +8,7 @@ const {
 } = require("../controllers/newsController");
 const upload = require("../middleware/multer");
 
-const router = Router();
+const router = Router();    
 
 
 router.route("/")

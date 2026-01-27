@@ -3,8 +3,10 @@ const { Router } = require("express");
 const {
     createBreakingNews,
     getLiveBreaking,
+     getBreakingNewsById,
     triggerNotification,
-    deleteBreaking
+    deleteBreaking,
+    updateBreakingNews
 } = require("../controllers/breakingNewsController");
 
 const router = Router();
@@ -16,7 +18,11 @@ router.route("/")
 router.route("/notify/:id")
     .post(triggerNotification);
 
+// ✅ UPDATE + DELETE
 router.route("/:id")
-    .delete(deleteBreaking);
+ .get(getBreakingNewsById)   // ✅ GET BY ID
+    .put(updateBreakingNews)   // UPDATE
+    .delete(deleteBreaking);   // DELETE
+
 
 module.exports = router;

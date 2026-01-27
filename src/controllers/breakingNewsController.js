@@ -13,6 +13,41 @@ const getLiveBreaking = asyncHandler(async (req, res) => {
     return sendResponse(res, 200, true, "All news fetched for debugging", news);
 });
 
+// ================= GET BY ID =================
+const getBreakingNewsById = asyncHandler(async (req, res) => {
+  const news = await BreakingNews.findById(req.params.id);
+
+  if (!news) {
+    return sendResponse(res, 404, false, "Breaking news not found");
+  }
+
+  return sendResponse(res, 200, true, "Breaking news fetched", news);
+});
+
+
+// ✅ UPDATE
+const updateBreakingNews = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+
+    const updatedNews = await BreakingNews.findByIdAndUpdate(
+        id,
+        req.body,
+        { new: true, runValidators: true }
+    );
+
+    if (!updatedNews) {
+        return sendResponse(res, 404, false, "Breaking news not found");
+    }
+
+    return sendResponse(
+        res,
+        200,
+        true,
+        "Breaking news updated successfully",
+        updatedNews
+    );
+});
+
 
 const triggerNotification = asyncHandler(async (req, res) => {
     const news = await BreakingNews.findById(req.params.id);
@@ -31,4 +66,4 @@ const deleteBreaking = asyncHandler(async (req, res) => {
     return sendResponse(res, 200, true, "Breaking news deleted");
 });
 
-module.exports = { createBreakingNews, getLiveBreaking, triggerNotification, deleteBreaking };
+module.exports = { createBreakingNews, getLiveBreaking, triggerNotification, deleteBreaking,  updateBreakingNews,  getBreakingNewsById, };

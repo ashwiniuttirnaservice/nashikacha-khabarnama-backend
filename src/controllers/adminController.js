@@ -79,10 +79,20 @@ const deleteAdmin = asyncHandler(async (req, res) => {
   return sendResponse(res, 200, true, "Admin removed");
 });
 
+
+// 5. Get All Admins / Panels
+const getAllAdmins = asyncHandler(async (req, res) => {
+  // Fetch all admins, exclude password
+  const admins = await Admin.find().select("-password").sort({ createdAt: -1 });
+
+  return sendResponse(res, 200, true, "Admins fetched successfully", admins);
+});
+
 module.exports = {
   registerAdmin,
   loginAdmin,
   getProfile,
   updateAdmin,
   deleteAdmin,
+  getAllAdmins, // export the new function
 };
