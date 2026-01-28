@@ -78,20 +78,18 @@ const getAllNew = asyncHandler(async (req, res) => {
  * @route   GET /api/v1/news
  */
 const getAllNews = asyncHandler(async (req, res) => {
-    // १. सुरक्षा तपासणी: जर टोकन नसेल किंवा युजरची ओळख पटली नसेल
     if (!req.user) {
         return sendResponse(res, 401, false, "लॉगिन करणे आवश्यक आहे.");
     }
 
     let query = {};
 
-    // २. रोलनुसार फिल्टरिंग
-    // जर रोल 'Panel' असेल, तर फक्त त्याने टाकलेल्या (adminId) बातम्या दिसतील
+
     if (req.user.role === "Panel") {
         query = { adminId: req.user.id };
     }
 
-    // जर रोल 'Admin' असेल, तर query रिकामी {} राहील आणि सर्व बातम्या दिसतील
+
 
     const news = await News.find(query).sort({ createdAt: -1 });
 

@@ -2,7 +2,7 @@ const { Router } = require("express");
 const {
   registerAdmin,
   loginAdmin,
-  logoutAdmin, // Navin
+  toggleUserLogin, // Navin
   getProfile,
   updateAdmin,
   deleteAdmin,
@@ -23,7 +23,7 @@ router.get("/all", getAllAdmins);
 router.use(authMiddleware);
 
 router.get("/profile", getProfile);
-router.post("/logout", logoutAdmin);
+router.put("/toggle-login/:userId", authMiddleware, toggleUserLogin);
 
 router.put("/update/:id", updateAdmin);
 router.delete("/delete/:id", deleteAdmin);
