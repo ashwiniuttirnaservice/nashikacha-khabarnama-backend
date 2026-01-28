@@ -58,9 +58,19 @@ const createNews = asyncHandler(async (req, res) => {
 })
 
 const getAllNew = asyncHandler(async (req, res) => {
-    const news = await News.find().sort({ createdAt: -1 });
+    const { category } = req.query;
+    let query = {};
 
-    return sendResponse(res, 201, true, "News article fetch  successfully", news);
+
+
+    if (category) {
+        query.category = category;
+    }
+
+
+    const news = await News.find(query).sort({ createdAt: -1 });
+
+    return sendResponse(res, 200, true, "News fetched successfully", news);
 });
 
 /**
