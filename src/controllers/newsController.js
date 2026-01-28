@@ -1,59 +1,46 @@
 const News = require("../models/news");
 const asyncHandler = require("../middleware/asyncHandler");
 const { sendResponse } = require("../utils/apiResponse");
+const path = require("path");
+const fs = require("fs");
 
 /**
  * @desc    Create a new news article
  * @route   POST /api/v1/news
- * @access  Private/Admin
  */
-
 const createNews = asyncHandler(async (req, res) => {
     const {
-        title,
-        slug,
-        category,
-        reporterName,
-        breakingNews,
-        priority,
-        shortDescription,
-        content,
-        tags,
-        seoTitle,
-        seoDescription,
-        publishDate,
-        status
+        title, slug, category, breakingNews, priority,
+        shortDescription, content, tags, seoTitle, seoDescription, publishDate, status
     } = req.body;
 
-
-    if ([title, slug, category, reporterName, content].some((field) => !field || field.trim() === "")) {
-        return sendResponse(res, 400, false, "All required fields must be filled");
+    // व्हॅलिडेशन (reporterName बॉडीमधून घेण्याची गरज नाही)
+    if ([title, slug, category, content].some((field) => !field || field.trim() === "")) {
+        return sendResponse(res, 400, false, "कृपया सर्व आवश्यक माहिती भरा.");
     }
-
 
     const existedNews = await News.findOne({ slug });
     if (existedNews) {
-        return sendResponse(res, 409, false, "News with this slug already exists");
+        return sendResponse(res, 409, false, "या नावाचा स्लॉग (Slug) आधीच अस्तित्वात आहे.");
     }
 
-
+    // टॅग्स प्रोसेसिंग
     const processedTags = typeof tags === 'string'
         ? tags.split(',').map(tag => tag.trim()).filter(tag => tag !== "")
         : tags;
 
-
     const imagePath = req.file ? req.file.filename : null;
 
     if (!imagePath && status === "Published") {
-        return sendResponse(res, 400, false, "Image is required for published news");
+        return sendResponse(res, 400, false, "बातमी प्रसिद्ध करण्यासाठी इमेज अपलोड करणे आवश्यक आहे.");
     }
 
-
+    // बातमी तयार करताना लॉगिन असलेल्या युजरचे नाव आणि आयडी वापरणे
     const news = await News.create({
         title,
         slug,
         category,
-        reporterName,
+        reporterName: req.user.fullName, // लॉगिन असलेल्या युजरचे नाव आपोआप येईल
         breakingNews,
         priority,
         shortDescription,
@@ -63,68 +50,99 @@ const createNews = asyncHandler(async (req, res) => {
         seoTitle,
         seoDescription,
         publishDate: publishDate || Date.now(),
-        status
+        status,
+        adminId: req.user.id // फिल्टरिंगसाठी युजर आयडी
     });
 
+    return sendResponse(res, 201, true, "बातमी यशस्वीरित्या तयार झाली!", news);
+})
 
-    return sendResponse(res, 201, true, "News article created successfully", news);
+const getAllNew = asyncHandler(async (req, res) => {
+    const { category } = req.query;
+    let query = {};
+
+
+
+    if (category) {
+        query.category = category;
+    }
+
+
+    const news = await News.find(query).sort({ createdAt: -1 });
+
+    return sendResponse(res, 200, true, "News fetched successfully", news);
 });
 
-
 /**
- * @desc    Get all news articles
+ * @desc    Get all news articles (Role Based Filtering)
  * @route   GET /api/v1/news
  */
 const getAllNews = asyncHandler(async (req, res) => {
-    const news = await News.find().sort({ createdAt: -1 });
+    // १. सुरक्षा तपासणी: जर टोकन नसेल किंवा युजरची ओळख पटली नसेल
+    if (!req.user) {
+        return sendResponse(res, 401, false, "लॉगिन करणे आवश्यक आहे.");
+    }
 
-    return sendResponse(res, 201, true, "News article fetch  successfully", news);
+    let query = {};
+
+    // २. रोलनुसार फिल्टरिंग
+    // जर रोल 'Panel' असेल, तर फक्त त्याने टाकलेल्या (adminId) बातम्या दिसतील
+    if (req.user.role === "Panel") {
+        query = { adminId: req.user.id };
+    }
+
+    // जर रोल 'Admin' असेल, तर query रिकामी {} राहील आणि सर्व बातम्या दिसतील
+
+    const news = await News.find(query).sort({ createdAt: -1 });
+
+    return sendResponse(res, 200, true, "बातम्यांची यादी प्राप्त झाली.", news);
 });
-
-
 
 /**
  * @desc    Get single news article by ID
- * @route   GET /api/v1/news/:id
  */
 const getNewsById = asyncHandler(async (req, res) => {
     const news = await News.findById(req.params.id);
 
     if (!news) {
-        return sendResponse(res, 404, false, "News article not found");
+        return sendResponse(res, 404, false, "बातमी सापडली नाही.");
     }
 
-    return sendResponse(res, 200, true, "News article fetched successfully", news);
+    // सुरक्षा: जर पॅनेल युजर दुसऱ्याची न्यूज पाहण्याचा प्रयत्न करत असेल तर (Optional)
+    if (req.user.role === "Panel" && news.adminId.toString() !== req.user.id) {
+        return sendResponse(res, 403, false, "तुम्हाला ही बातमी पाहण्याची परवानगी नाही.");
+    }
+
+    return sendResponse(res, 200, true, "बातमी प्राप्त झाली.", news);
 });
 
 /**
  * @desc    Update news article
- * @route   PUT /api/v1/news/:id
  */
 const updateNews = asyncHandler(async (req, res) => {
     let news = await News.findById(req.params.id);
 
     if (!news) {
-        return sendResponse(res, 404, false, "News article not found");
+        return sendResponse(res, 404, false, "बातमी सापडली नाही.");
+    }
+
+    // पॅनेल युजर फक्त स्वतःचीच न्यूज अपडेट करू शकतो
+    if (req.user.role === "Panel" && news.adminId.toString() !== req.user.id) {
+        return sendResponse(res, 403, false, "तुम्ही ही बातमी बदलू शकत नाही.");
     }
 
     const dataToUpdate = { ...req.body };
 
-    // Handle Tags if provided
     if (req.body.tags) {
         dataToUpdate.tags = typeof req.body.tags === 'string'
-            ? req.body.tags.split(',').map(tag => tag.trim()).filter(tag => tag !== "")
+            ? req.body.tags.split(',').map(tag => tag.trim())
             : req.body.tags;
     }
 
-    // Handle Image Update
     if (req.file) {
-        // Delete old image if it exists
         if (news.image) {
             const oldPath = path.join(__dirname, "../../uploads/News", news.image);
-            if (fs.existsSync(oldPath)) {
-                fs.unlinkSync(oldPath);
-            }
+            if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
         }
         dataToUpdate.image = req.file.filename;
     }
@@ -134,35 +152,37 @@ const updateNews = asyncHandler(async (req, res) => {
         runValidators: true,
     });
 
-    return sendResponse(res, 200, true, "News article updated successfully", news);
+    return sendResponse(res, 200, true, "बातमी यशस्वीरित्या अपडेट झाली.", news);
 });
 
 /**
  * @desc    Delete news article
- * @route   DELETE /api/v1/news/:id
  */
 const deleteNews = asyncHandler(async (req, res) => {
     const news = await News.findById(req.params.id);
 
     if (!news) {
-        return sendResponse(res, 404, false, "News article not found");
+        return sendResponse(res, 404, false, "बातमी सापडली नाही.");
     }
 
-    // Delete image file from server
+    // पॅनेल युजर फक्त स्वतःचीच न्यूज डिलीट करू शकतो
+    if (req.user.role === "Panel" && news.adminId.toString() !== req.user.id) {
+        return sendResponse(res, 403, false, "तुम्ही ही बातमी डिलीट करू शकत नाही.");
+    }
+
     if (news.image) {
         const imagePath = path.join(__dirname, "../../uploads/News", news.image);
-        if (fs.existsSync(imagePath)) {
-            fs.unlinkSync(imagePath);
-        }
+        if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
     }
 
     await news.deleteOne();
 
-    return sendResponse(res, 200, true, "News article and associated image deleted successfully");
+    return sendResponse(res, 200, true, "बातमी यशस्वीरित्या डिलीट करण्यात आली.");
 });
 
 module.exports = {
     createNews,
+    getAllNew,
     getAllNews,
     getNewsById,
     updateNews,

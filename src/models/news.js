@@ -1,6 +1,11 @@
 const mongoose = require('mongoose');
 
 const newsSchema = new mongoose.Schema({
+    adminId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Admin',
+        required: true
+    },
     title: {
         type: String,
         required: [true, 'Title is required'],
@@ -19,7 +24,7 @@ const newsSchema = new mongoose.Schema({
     },
     reporterName: {
         type: String,
-        required: true
+        required: true // इथे आपोआप लॉगिन असलेल्या युजरचे नाव येईल
     },
     breakingNews: {
         type: String,
@@ -68,5 +73,4 @@ const newsSchema = new mongoose.Schema({
 });
 
 const News = mongoose.model('News', newsSchema);
-
 module.exports = News;
