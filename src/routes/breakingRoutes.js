@@ -1,22 +1,25 @@
+// src/routes/breakingNewsRoutes.js
 
-const { Router } = require("express");
+const express = require('express');
+const router = express.Router();
+const authMiddleware = require("../middleware/authMiddleware");
 const {
-    createBreakingNews,
-    getLiveBreaking,
-    triggerNotification,
-    deleteBreaking
-} = require("../controllers/breakingNewsController");
+    createBreakingNews, getLiveBreaking, getAllBreakingNews,
+    getBreakingNewsById, updateBreakingNews, triggerNotification, deleteBreaking
+} = require('../controllers/breakingNewsController');
 
-const router = Router();
 
-router.route("/")
-    .post(createBreakingNews)
-    .get(getLiveBreaking); // Usually frontend only calls "live" news
+router.get('/live', getLiveBreaking);
 
-router.route("/notify/:id")
-    .post(triggerNotification);
+router.use(authMiddleware);
 
-router.route("/:id")
-    .delete(deleteBreaking);
+router.post('/', createBreakingNews);
+router.get('/all', getAllBreakingNews);
+router.get('/:id', getBreakingNewsById);
+router.put('/:id', updateBreakingNews);
+router.delete('/:id', deleteBreaking);
+
+
+router.post('/:id/notify', triggerNotification);
 
 module.exports = router;

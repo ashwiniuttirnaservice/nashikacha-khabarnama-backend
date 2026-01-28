@@ -4,6 +4,56 @@ const { sendResponse } = require("../utils/apiResponse");
 const sendEmail = require("../utils/sendEmail");
 const jwt = require("jsonwebtoken");
 
+
+// const uploadToAws = require("../help/awsUpload.js");
+
+// const registerAdmin = asyncHandler(async (req, res) => {
+//   const { fullName, email, password, role } = req.body;
+
+//   // १. युजर आधीच आहे का ते तपासा
+//   const existedAdmin = await Admin.findOne({ email });
+//   if (existedAdmin) {
+//     return sendResponse(res, 400, false, "या ईमेलचा ॲडमिन आधीच अस्तित्वात आहे.");
+//   }
+
+//   // २. इमेज अपलोड लॉजिक (जर फोटो पाठवला असेल तर)
+//   // तात्पुरतं हे कमेंट करा किंवा TRY-CATCH मध्ये सुरक्षित ठेवा
+//   let fileDetails = null;
+//   try {
+//     if (req.files?.profileImage?.[0]) {
+//       fileDetails = await uploadToAws({
+//         file: req.files.profileImage[0],
+//         fileName: "admin_profile",
+//         folderName: "admins",
+//       });
+//     }
+//   } catch (awsError) {
+//     console.log("AWS सर्व्हर डाऊन आहे, पण आम्ही नोंदणी पुढे चालू ठेवत आहोत...");
+//     fileDetails = null; // फोटोशिवाय पुढे जा
+//   }
+
+//   // ३. डेटाबेसमध्ये एंट्री तयार करा
+//   const admin = await Admin.create({
+//     fullName,
+//     email,
+//     password,
+//     role,
+//     profileImage: fileDetails, // AWS कडून आलेला URL/Data इथे सेव्ह होईल
+//     status: "Pending",        // डीफॉल्ट पेंडिंग
+//     isLoggedIn: false         // सुरुवातीला लॉगिन परवानगी बंद
+//   });
+
+//   const adminData = admin.toObject();
+//   delete adminData.password;
+
+//   return sendResponse(
+//     res,
+//     201,
+//     true,
+//     "नोंदणी यशस्वी झाली! कृपया मुख्य ॲडमिनच्या मंजुरीची प्रतीक्षा करा.",
+//     adminData
+//   );
+// });
 // 1. Register Admin (Default status 'Pending' asel)
 const registerAdmin = asyncHandler(async (req, res) => {
   const { fullName, email, password, role } = req.body;
