@@ -37,39 +37,53 @@ const registerAdmin = asyncHandler(async (req, res) => {
   );
 });
 
-// 2. Login Admin (Status check ani isLoggedIn ON)
 const loginAdmin = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
   const admin = await Admin.findOne({ email }).select("+password");
 
-  if (!admin) return sendResponse(res, 401, false, "Invalid credentials");
-
-  // Check Status - Fakt 'Approved' users login karu shaktat
-  if (admin.status !== "Approved") {
-    return sendResponse(
-      res,
-      403,
-      false,
-      `Tumche account ${admin.status} aahe. Admin shi sampark sadha.`,
-    );
+  if (!admin) {
+    return sendResponse(res, 401, false, "ईमेल किंवा पासवर्ड चुकीचा आहे.");
   }
 
-  const isMatch = await admin.comparePassword(password);
-  if (!isMatch) return sendResponse(res, 401, false, "Invalid credentials");
 
-  // Update Login Status
-  admin.isLoggedIn = true;
+  const isMatch = await admin.comparePassword(password);
+  if (!isMatch) {
+    return sendResponse(res, 401, false, "ईमेल किंवा पासवर्ड चुकीचा आहे.");
+  }
+
+
+  if (admin.role === "Panel") {
+
+    if (admin.isLoggedIn === false) {
+      return sendResponse(
+        res,
+        403,
+        false,
+        "तुम्हाला लॉगिन करण्याची परवानगी नाही. कृपया मुख्य ॲडमिनशी संपर्क साधा."
+      );
+    }
+
+    if (admin.status !== "Approved") {
+      return sendResponse(
+        res,
+        403,
+        false,
+        `तुमचे खाते सध्या '${admin.status}' आहे. प्रवेश नाकारला.`
+      );
+    }
+  }
+
   admin.lastLogin = Date.now();
   await admin.save();
 
   const token = jwt.sign(
-    { id: admin._id, role: admin.role },
+    { id: admin._id, role: admin.role, fullName: admin.fullName },
     process.env.JWT_SECRET,
     { expiresIn: "1d" },
   );
 
-  return sendResponse(res, 200, true, "Login यशस्वी!", {
+  return sendResponse(res, 200, true, "लॉगिन यशस्वी झाले!", {
     token,
     role: admin.role,
   });
