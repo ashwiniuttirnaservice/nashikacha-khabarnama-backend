@@ -89,12 +89,33 @@ const loginAdmin = asyncHandler(async (req, res) => {
   });
 });
 
-const logoutAdmin = asyncHandler(async (req, res) => {
-  await Admin.findByIdAndUpdate(req.user.id, { isLoggedIn: false });
+const toggleUserLogin = asyncHandler(async (req, res) => {
 
-  return sendResponse(res, 200, true, "Logout यशस्वी!");
+  if (req.user.role !== "Admin") {
+    return sendResponse(res, 403, false, "तुम्हाला ही कृती करण्याची परवानगी नाही.");
+  }
+
+  const { userId } = req.params;
+
+  const user = await Admin.findById(userId);
+
+  if (!user) {
+    return sendResponse(res, 404, false, "युजर सापडला नाही.");
+  }
+
+
+  user.isLoggedIn = !user.isLoggedIn;
+  await user.save();
+
+  const message = user.isLoggedIn
+    ? `${user.fullName} ला लॉगिन परवानगी दिली आहे.`
+    : `${user.fullName} ची लॉगिन परवानगी बंद केली आहे.`;
+
+  return sendResponse(res, 200, true, message, {
+    userId: user._id,
+    isLoggedIn: user.isLoggedIn
+  });
 });
-
 // 4. Update Admin Status (Main Admin sathi)
 
 const updateAdminStatus = asyncHandler(async (req, res) => {
@@ -192,7 +213,7 @@ module.exports = {
   registerAdmin,
   loginAdmin,
   getAllAdmins,
-  logoutAdmin,
+  toggleUserLogin,
   getProfile,
   updateAdmin,
   deleteAdmin,
