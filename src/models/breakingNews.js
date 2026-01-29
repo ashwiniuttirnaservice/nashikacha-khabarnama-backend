@@ -1,10 +1,11 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const breakingNewsSchema = new mongoose.Schema({
+const breakingNewsSchema = new mongoose.Schema(
+  {
     adminId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Admin',
-        required: true
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Admin",
+      required: true,
     },
     headline: { type: String, required: true, trim: true },
     category: { type: String, required: true },
@@ -13,19 +14,22 @@ const breakingNewsSchema = new mongoose.Schema({
     endTime: { type: Date, required: true },
     isPushNotificationSent: { type: Boolean, default: false },
     status: {
-        type: String,
-        enum: ["Active", "Expired", "Scheduled"],
-        default: "Active"
-    }
-}, { timestamps: true });
+      type: String,
+      enum: ["Active", "Expired", "Scheduled"],
+      default: "Active",
+    },
+  },
+  { timestamps: true },
+);
 
-// Status Logic
-breakingNewsSchema.pre('save', function (next) {
-    const now = new Date();
-    if (now > this.endTime) this.status = "Expired";
-    else if (now < this.startTime) this.status = "Scheduled";
-    else this.status = "Active";
-    next();
+breakingNewsSchema.pre("save", async function () {
+  const now = new Date();
+  if (now > this.endTime) {
+    this.status = "Expired";
+  } else if (now < this.startTime) {
+    this.status = "Scheduled";
+  } else {
+    this.status = "Active";
+  }
 });
-
-module.exports = mongoose.model('BreakingNews', breakingNewsSchema);
+module.exports = mongoose.model("BreakingNews", breakingNewsSchema);

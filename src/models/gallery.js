@@ -1,55 +1,60 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const gallerySchema = new mongoose.Schema({
+const gallerySchema = new mongoose.Schema(
+  {
     title: {
-        type: String,
-        required: [true, "Title is required"],
-        trim: true
+      type: String,
+      required: [true, "Title is required"],
+      trim: true,
     },
     photo: {
-        type: String,
-        required: [true, "Photo is required"]
+      type: Object,
+      required: true,
     },
     category: {
-        type: String,
-        required: [true, "Category is required"],
-        trim: true
+      type: String,
+      required: [true, "Category is required"],
+      trim: true,
     },
     description: {
-        type: String,
-        trim: true
+      type: String,
+      trim: true,
     },
     location: {
-        type: String,
-        trim: true
+      type: String,
+      trim: true,
     },
     photographerName: {
-        type: String,
-        trim: true
+      type: String,
+      trim: true,
     },
     date: {
-        type: Date,
-        default: Date.now
+      type: Date,
+      default: Date.now,
     },
-    tags: [{
+    tags: [
+      {
         type: String,
-        trim: true
-    }],
+        trim: true,
+      },
+    ],
     views: {
-        type: Number,
-        default: 0
+      type: Number,
+      default: 0,
     },
     likes: {
-        type: Number,
-        default: 0
+      type: Number,
+      default: 0,
     },
     shares: {
-        type: Number,
-        default: 0
-    }
-}, {
-    timestamps: true
-});
+      type: Number,
+      default: 0,
+    },
+  },
+  {
+    timestamps: true,
+  },
+);
 
-const Gallery = mongoose.model('Gallery', gallerySchema);
+const Gallery = mongoose.model("Gallery", gallerySchema);
 module.exports = Gallery;

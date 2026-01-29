@@ -4,57 +4,8 @@ const { sendResponse } = require("../utils/apiResponse");
 const sendEmail = require("../utils/sendEmail");
 const jwt = require("jsonwebtoken");
 
+const uploadToAws = require("../help/awsUpload.js");
 
-// const uploadToAws = require("../help/awsUpload.js");
-
-// const registerAdmin = asyncHandler(async (req, res) => {
-//   const { fullName, email, password, role } = req.body;
-
-//   // १. युजर आधीच आहे का ते तपासा
-//   const existedAdmin = await Admin.findOne({ email });
-//   if (existedAdmin) {
-//     return sendResponse(res, 400, false, "या ईमेलचा ॲडमिन आधीच अस्तित्वात आहे.");
-//   }
-
-//   // २. इमेज अपलोड लॉजिक (जर फोटो पाठवला असेल तर)
-//   // तात्पुरतं हे कमेंट करा किंवा TRY-CATCH मध्ये सुरक्षित ठेवा
-//   let fileDetails = null;
-//   try {
-//     if (req.files?.profileImage?.[0]) {
-//       fileDetails = await uploadToAws({
-//         file: req.files.profileImage[0],
-//         fileName: "admin_profile",
-//         folderName: "admins",
-//       });
-//     }
-//   } catch (awsError) {
-//     console.log("AWS सर्व्हर डाऊन आहे, पण आम्ही नोंदणी पुढे चालू ठेवत आहोत...");
-//     fileDetails = null; // फोटोशिवाय पुढे जा
-//   }
-
-//   // ३. डेटाबेसमध्ये एंट्री तयार करा
-//   const admin = await Admin.create({
-//     fullName,
-//     email,
-//     password,
-//     role,
-//     profileImage: fileDetails, // AWS कडून आलेला URL/Data इथे सेव्ह होईल
-//     status: "Pending",        // डीफॉल्ट पेंडिंग
-//     isLoggedIn: false         // सुरुवातीला लॉगिन परवानगी बंद
-//   });
-
-//   const adminData = admin.toObject();
-//   delete adminData.password;
-
-//   return sendResponse(
-//     res,
-//     201,
-//     true,
-//     "नोंदणी यशस्वी झाली! कृपया मुख्य ॲडमिनच्या मंजुरीची प्रतीक्षा करा.",
-//     adminData
-//   );
-// });
-// 1. Register Admin (Default status 'Pending' asel)
 const registerAdmin = asyncHandler(async (req, res) => {
   const { fullName, email, password, role } = req.body;
 
@@ -64,15 +15,32 @@ const registerAdmin = asyncHandler(async (req, res) => {
       res,
       400,
       false,
-      "Admin with this email already exists",
+      "या ईमेलचा ॲडमिन आधीच अस्तित्वात आहे.",
     );
+  }
+
+  let fileDetails = null;
+  try {
+    if (req.files?.profileImage?.[0]) {
+      fileDetails = await uploadToAws({
+        file: req.files.profileImage[0],
+        fileName: "admin_profile",
+        folderName: "admins",
+      });
+    }
+  } catch (awsError) {
+    console.log("AWS सर्व्हर डाऊन आहे, पण आम्ही नोंदणी पुढे चालू ठेवत आहोत...");
+    fileDetails = null;
   }
 
   const admin = await Admin.create({
     fullName,
     email,
     password,
-    role, // Model madhe default status 'Pending' asel
+    role,
+    profileImage: fileDetails,
+    status: "Pending",
+    isLoggedIn: false,
   });
 
   const adminData = admin.toObject();
@@ -82,10 +50,42 @@ const registerAdmin = asyncHandler(async (req, res) => {
     res,
     201,
     true,
-    "Registration यशस्वी! Admin approval chi pratiksha kara.",
+    "नोंदणी यशस्वी झाली! कृपया मुख्य ॲडमिनच्या मंजुरीची प्रतीक्षा करा.",
     adminData,
   );
 });
+// 1. Register Admin (Default status 'Pending' asel)
+// const registerAdmin = asyncHandler(async (req, res) => {
+//   const { fullName, email, password, role } = req.body;
+
+//   const existedAdmin = await Admin.findOne({ email });
+//   if (existedAdmin) {
+//     return sendResponse(
+//       res,
+//       400,
+//       false,
+//       "Admin with this email already exists",
+//     );
+//   }
+
+//   const admin = await Admin.create({
+//     fullName,
+//     email,
+//     password,
+//     role, // Model madhe default status 'Pending' asel
+//   });
+
+//   const adminData = admin.toObject();
+//   delete adminData.password;
+
+//   return sendResponse(
+//     res,
+//     201,
+//     true,
+//     "Registration यशस्वी! Admin approval chi pratiksha kara.",
+//     adminData,
+//   );
+// });
 
 const loginAdmin = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
@@ -96,21 +96,18 @@ const loginAdmin = asyncHandler(async (req, res) => {
     return sendResponse(res, 401, false, "ईमेल किंवा पासवर्ड चुकीचा आहे.");
   }
 
-
   const isMatch = await admin.comparePassword(password);
   if (!isMatch) {
     return sendResponse(res, 401, false, "ईमेल किंवा पासवर्ड चुकीचा आहे.");
   }
 
-
   if (admin.role === "Panel") {
-
     if (admin.isLoggedIn === false) {
       return sendResponse(
         res,
         403,
         false,
-        "तुम्हाला लॉगिन करण्याची परवानगी नाही. कृपया मुख्य ॲडमिनशी संपर्क साधा."
+        "तुम्हाला लॉगिन करण्याची परवानगी नाही. कृपया मुख्य ॲडमिनशी संपर्क साधा.",
       );
     }
 
@@ -119,7 +116,7 @@ const loginAdmin = asyncHandler(async (req, res) => {
         res,
         403,
         false,
-        `तुमचे खाते सध्या '${admin.status}' आहे. प्रवेश नाकारला.`
+        `तुमचे खाते सध्या '${admin.status}' आहे. प्रवेश नाकारला.`,
       );
     }
   }
@@ -140,9 +137,13 @@ const loginAdmin = asyncHandler(async (req, res) => {
 });
 
 const toggleUserLogin = asyncHandler(async (req, res) => {
-
   if (req.user.role !== "Admin") {
-    return sendResponse(res, 403, false, "तुम्हाला ही कृती करण्याची परवानगी नाही.");
+    return sendResponse(
+      res,
+      403,
+      false,
+      "तुम्हाला ही कृती करण्याची परवानगी नाही.",
+    );
   }
 
   const { userId } = req.params;
@@ -153,7 +154,6 @@ const toggleUserLogin = asyncHandler(async (req, res) => {
     return sendResponse(res, 404, false, "युजर सापडला नाही.");
   }
 
-
   user.isLoggedIn = !user.isLoggedIn;
   await user.save();
 
@@ -163,7 +163,7 @@ const toggleUserLogin = asyncHandler(async (req, res) => {
 
   return sendResponse(res, 200, true, message, {
     userId: user._id,
-    isLoggedIn: user.isLoggedIn
+    isLoggedIn: user.isLoggedIn,
   });
 });
 // 4. Update Admin Status (Main Admin sathi)
@@ -232,19 +232,46 @@ const getProfile = asyncHandler(async (req, res) => {
   return sendResponse(res, 200, true, "Profile fetched", admin);
 });
 
-// 6. Update Admin Details
 const updateAdmin = asyncHandler(async (req, res) => {
   const { fullName, role, password } = req.body;
   const admin = await Admin.findById(req.params.id);
 
-  if (!admin) return sendResponse(res, 404, false, "Admin not found");
+  if (!admin) {
+    return sendResponse(res, 404, false, "ॲडमिन सापडला नाही.");
+  }
 
+  let fileDetails = admin.profileImage;
+
+  try {
+    if (req.files?.profileImage?.[0]) {
+      fileDetails = await uploadToAws({
+        file: req.files.profileImage[0],
+        fileName: `admin_profile_${Date.now()}`,
+        folderName: "admins",
+      });
+    }
+  } catch (awsError) {
+    console.log("Update करताना AWS एरर आला, पण इतर माहिती अपडेट करत आहोत...");
+  }
+
+  // २. डेटा अपडेट करा
   if (fullName) admin.fullName = fullName;
   if (role) admin.role = role;
   if (password) admin.password = password;
+  admin.profileImage = fileDetails;
 
   await admin.save();
-  return sendResponse(res, 200, true, "Admin updated successfully");
+
+  const updatedAdmin = admin.toObject();
+  delete updatedAdmin.password;
+
+  return sendResponse(
+    res,
+    200,
+    true,
+    "ॲडमिनची माहिती यशस्वीरित्या अपडेट झाली.",
+    updatedAdmin,
+  );
 });
 
 // 7. Delete Admin

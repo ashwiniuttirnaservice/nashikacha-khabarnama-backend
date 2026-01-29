@@ -11,12 +11,15 @@ const {
 } = require("../controllers/adminController");
 const authMiddleware = require("../middleware/authMiddleware");
 
+const upload = require("../middleware/multer.js");
+
 const router = Router();
 
-/**
- * PUBLIC ROUTES
- */
-router.post("/register", registerAdmin);
+router.post(
+  "/register",
+  upload.fields([{ name: "profileImage", maxCount: 1 }]),
+  registerAdmin,
+);
 router.post("/login", loginAdmin);
 router.put("/update-status/:id", updateAdminStatus);
 router.get("/all", getAllAdmins);
@@ -25,7 +28,13 @@ router.use(authMiddleware);
 router.get("/profile", getProfile);
 router.put("/toggle-login/:userId", authMiddleware, toggleUserLogin);
 
-router.put("/update/:id", updateAdmin);
+router.put(
+  "/update/:id",
+  authMiddleware,
+  upload.fields([{ name: "profileImage", maxCount: 1 }]),
+  updateAdmin,
+);
+
 router.delete("/delete/:id", deleteAdmin);
 
 module.exports = router;
