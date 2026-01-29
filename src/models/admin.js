@@ -36,8 +36,8 @@ const adminSchema = new mongoose.Schema(
       default: "Pending",
     },
     profileImage: {
-      type: String,
-      default: "",
+      type: Object,
+      default: null
     },
     isLoggedIn: {
       type: Boolean,

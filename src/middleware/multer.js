@@ -4,6 +4,8 @@ const fs = require("fs");
 
 const getFolderPath = (fieldname) => {
   switch (fieldname) {
+    case "profileImage":
+      return "uploads/admins/";
     case "newsImage":
       return "uploads/News/";
 
