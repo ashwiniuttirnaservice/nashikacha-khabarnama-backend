@@ -28,7 +28,13 @@ router.use(authMiddleware);
 router.get("/profile", getProfile);
 router.put("/toggle-login/:userId", authMiddleware, toggleUserLogin);
 
-router.put("/update/:id", updateAdmin);
+router.put(
+  "/update/:id",
+  authMiddleware,
+  upload.fields([{ name: "profileImage", maxCount: 1 }]),
+  updateAdmin,
+);
+
 router.delete("/delete/:id", deleteAdmin);
 
 module.exports = router;

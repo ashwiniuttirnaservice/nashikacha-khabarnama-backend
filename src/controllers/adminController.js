@@ -232,19 +232,46 @@ const getProfile = asyncHandler(async (req, res) => {
   return sendResponse(res, 200, true, "Profile fetched", admin);
 });
 
-// 6. Update Admin Details
 const updateAdmin = asyncHandler(async (req, res) => {
   const { fullName, role, password } = req.body;
   const admin = await Admin.findById(req.params.id);
 
-  if (!admin) return sendResponse(res, 404, false, "Admin not found");
+  if (!admin) {
+    return sendResponse(res, 404, false, "ॲडमिन सापडला नाही.");
+  }
 
+  let fileDetails = admin.profileImage;
+
+  try {
+    if (req.files?.profileImage?.[0]) {
+      fileDetails = await uploadToAws({
+        file: req.files.profileImage[0],
+        fileName: `admin_profile_${Date.now()}`,
+        folderName: "admins",
+      });
+    }
+  } catch (awsError) {
+    console.log("Update करताना AWS एरर आला, पण इतर माहिती अपडेट करत आहोत...");
+  }
+
+  // २. डेटा अपडेट करा
   if (fullName) admin.fullName = fullName;
   if (role) admin.role = role;
   if (password) admin.password = password;
+  admin.profileImage = fileDetails;
 
   await admin.save();
-  return sendResponse(res, 200, true, "Admin updated successfully");
+
+  const updatedAdmin = admin.toObject();
+  delete updatedAdmin.password;
+
+  return sendResponse(
+    res,
+    200,
+    true,
+    "ॲडमिनची माहिती यशस्वीरित्या अपडेट झाली.",
+    updatedAdmin,
+  );
 });
 
 // 7. Delete Admin
