@@ -54,38 +54,6 @@ const registerAdmin = asyncHandler(async (req, res) => {
     adminData,
   );
 });
-// 1. Register Admin (Default status 'Pending' asel)
-// const registerAdmin = asyncHandler(async (req, res) => {
-//   const { fullName, email, password, role } = req.body;
-
-//   const existedAdmin = await Admin.findOne({ email });
-//   if (existedAdmin) {
-//     return sendResponse(
-//       res,
-//       400,
-//       false,
-//       "Admin with this email already exists",
-//     );
-//   }
-
-//   const admin = await Admin.create({
-//     fullName,
-//     email,
-//     password,
-//     role, // Model madhe default status 'Pending' asel
-//   });
-
-//   const adminData = admin.toObject();
-//   delete adminData.password;
-
-//   return sendResponse(
-//     res,
-//     201,
-//     true,
-//     "Registration यशस्वी! Admin approval chi pratiksha kara.",
-//     adminData,
-//   );
-// });
 
 const loginAdmin = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
@@ -254,7 +222,6 @@ const updateAdmin = asyncHandler(async (req, res) => {
     console.log("Update करताना AWS एरर आला, पण इतर माहिती अपडेट करत आहोत...");
   }
 
-  // २. डेटा अपडेट करा
   if (fullName) admin.fullName = fullName;
   if (role) admin.role = role;
   if (password) admin.password = password;
@@ -281,7 +248,6 @@ const deleteAdmin = asyncHandler(async (req, res) => {
 });
 
 const getAllAdmins = asyncHandler(async (req, res) => {
-  // Fetch all admins, exclude password
   const admins = await Admin.find().select("-password").sort({ createdAt: -1 });
 
   return sendResponse(res, 200, true, "Admins fetched successfully", admins);
