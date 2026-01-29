@@ -11,12 +11,15 @@ const {
 } = require("../controllers/adminController");
 const authMiddleware = require("../middleware/authMiddleware");
 
+const upload = require("../middleware/multer.js");
+
 const router = Router();
 
-/**
- * PUBLIC ROUTES
- */
-router.post("/register", registerAdmin);
+router.post(
+  "/register",
+  upload.fields([{ name: "profileImage", maxCount: 1 }]),
+  registerAdmin,
+);
 router.post("/login", loginAdmin);
 router.put("/update-status/:id", updateAdminStatus);
 router.get("/all", getAllAdmins);
